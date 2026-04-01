@@ -1,9 +1,15 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+// Replace with your computer's local IP address when testing on a real phone
+// e.g. 'http://192.168.1.10:3000'
+const BACKEND_URL = 'http://localhost:3000';
 
 export default function HomeScreen() {
   const [photo, setPhoto] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function takePhoto() {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -11,20 +17,46 @@ export default function HomeScreen() {
       alert('Camera access is required to take a photo of your fridge.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      quality: 0.7,
-    });
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
+      setError(null);
     }
   }
 
   async function pickFromGallery() {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      quality: 0.7,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
+      setError(null);
+    }
+  }
+
+  async function findRecipes() {
+    if (!photo) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('photo', {
+        uri: photo,
+        name: 'fridge.jpg',
+        type: 'image/jpeg',
+      } as any);
+
+      const response = await fetch(`${BACKEND_URL}/analyze`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Server error');
+      const data = await response.json();
+      // TODO Step 5: navigate to results screen with data
+      alert(`Found ingredients: ${data.ingredients.join(', ')}`);
+    } catch (err) {
+      setError('Could not connect to the server. Make sure the backend is running.');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -36,11 +68,20 @@ export default function HomeScreen() {
       {photo ? (
         <View style={styles.previewContainer}>
           <Image source={{ uri: photo }} style={styles.preview} />
-          <TouchableOpacity style={styles.buttonPrimary} onPress={() => setPhoto(null)}>
+          {error && <Text style={styles.error}>{error}</Text>}
+          <TouchableOpacity style={styles.buttonPrimary} onPress={() => { setPhoto(null); setError(null); }}>
             <Text style={styles.buttonText}>Retake Photo</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.buttonPrimary, styles.buttonGreen]}>
-            <Text style={styles.buttonText}>Find Recipes →</Text>
+          <TouchableOpacity
+            style={[styles.buttonPrimary, styles.buttonGreen, loading && styles.buttonDisabled]}
+            onPress={findRecipes}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Find Recipes →</Text>
+            )}
           </TouchableOpacity>
         </View>
       ) : (
@@ -94,6 +135,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#40916c',
     marginTop: 12,
   },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
   buttonText: {
     color: '#fff',
     fontSize: 17,
@@ -111,5 +155,11 @@ const styles = StyleSheet.create({
     height: 300,
     borderRadius: 16,
     marginBottom: 20,
+  },
+  error: {
+    color: '#c0392b',
+    textAlign: 'center',
+    marginBottom: 12,
+    fontSize: 14,
   },
 });
