@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -7,6 +8,7 @@ import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } fr
 const BACKEND_URL = 'http://localhost:3000';
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +53,7 @@ export default function HomeScreen() {
 
       if (!response.ok) throw new Error('Server error');
       const data = await response.json();
-      // TODO Step 5: navigate to results screen with data
-      alert(`Found ingredients: ${data.ingredients.join(', ')}`);
+      router.push({ pathname: '/results', params: { data: JSON.stringify(data) } });
     } catch (err) {
       setError('Could not connect to the server. Make sure the backend is running.');
     } finally {
