@@ -66,5 +66,5 @@ Respond in this exact JSON format:
   }
 });
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`FridgeChef backend running on port ${PORT}`));
