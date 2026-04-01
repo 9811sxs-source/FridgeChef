@@ -5,7 +5,7 @@ import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } fr
 
 // Replace with your computer's local IP address when testing on a real phone
 // e.g. 'http://192.168.1.10:3000'
-const BACKEND_URL = 'https://fridgechef-production-c659.up.railway.app';
+const BACKEND_URL = 'https://fridgechef-backend-1.onrender.com';
 
 export default function HomeScreen() {
   const router = useRouter();
